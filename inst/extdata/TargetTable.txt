@@ -1,0 +1,5 @@
+Name	"Analyte 6"	Mass	56	98	170	171
+Name	"Analyte 12"	Mass	75	117	118	148
+Name	"Analyte 16"	Mass	66	147	190	191
+Name	"Analyte 24"	Mass	55	72	146	156
+Name	"Analyte 27"	Mass	120	121	122	194

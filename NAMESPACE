@@ -1,0 +1,21 @@
+import(Rcpp)
+import(mzR)
+import(ggplot2)
+import(grid)
+import(reshape2)
+
+export(getEIC,
+       getPeak,
+       getPeakScore,
+       getRI,
+       getRIStandard,
+       getScore,
+       getTarget,
+       getTargetTable,
+       optFrag,
+       plotEIC,
+       plotTIC,
+       putTargetTable,
+       readCDF,
+       readMSL,
+       writeMSL)

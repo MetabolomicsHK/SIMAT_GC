@@ -1,0 +1,15 @@
+CHANGES IN VERSION 0.99.3
+-------------------------
+ o exporting single functions instead of pattern [2015-03-12 Thu]
+ 
+CHANGES IN VERSION 0.99.2
+-------------------------
+ o The package is updated based on the comments from Bioconductor reviewers [2015-03-01 Wed]
+
+CHANGES IN VERSION 0.99.1
+-------------------------
+ o The package is updated based on the comments from Bioconductor reviewers [2015-02-11 Wed]
+
+CHANGES IN VERSION 0.99.0
+-------------------------
+ o SIMAT package is created [2015-01-27 Tue]

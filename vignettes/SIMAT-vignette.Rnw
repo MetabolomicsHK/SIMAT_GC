@@ -1,0 +1,227 @@
+%\VignetteIndexEntry{SIMAT Usage}
+\documentclass{article}
+\usepackage{url}
+\title{SIMAT: GC-SIM-MS Analayis Tool}
+
+\author{Mo R. Nezami Ranjbar}
+\date{\today}
+
+% The is for R CMD check, which finds it in spite of the "%", and also for
+% automatic creation of links in the HTML documentation for the package:
+
+%\VignetteIndexEntry{UNDO Demo}
+
+\begin{document}
+
+%%%%%%%% Setup
+
+% Do not reform code
+\SweaveOpts{concordance=TRUE}
+
+% Size for figures
+\setkeys{Gin}{width=\textwidth}
+
+% R code and output non-italic
+% inspired from Ross Ihaka http://www.stat.auckland.ac.nz/~ihaka/downloads/Sweave-customisation.pdf
+\DefineVerbatimEnvironment{Sinput}{Verbatim}{xleftmargin=0em}
+\DefineVerbatimEnvironment{Soutput}{Verbatim}{xleftmargin=0em}
+\DefineVerbatimEnvironment{Scode}{Verbatim}{xleftmargin=0em}
+
+% Reduce characters per line in R output
+
+%<<set_width, echo=FALSE>>=
+%options( width = 60 )
+%@ 
+
+% Make title
+\maketitle
+
+% useful resources for Sweave: http://www.statistik.lmu.de/~leisch/Sweave
+
+\section{Selected Ion Monitoring}
+Gas chromatography coupled with mass spectrometry (GC-MS) is one of the promising technologies for qualitative and quantitative analysis of small biomolecules. Because of the existence of spectral libraries, GC-MS instruments can be set up efficiently for targeted analysis. Also, to increase sensitivity, samples can be analyzed in selected ion monitoring (SIM) mode. While many software have been provided for analysis of untargeted GC-MS data, no specific tool does exist for processing of GC-MS data acquired with SIM.
+
+
+\section{SIMAT package}
+SIMAT is a tool for analysis of GC-MS data acquired in SIM mode. The tool provides several functions to import raw GC-SIM-MS data and standard format mass spectral libraries. It also provides guidance for fragment selection before running the targeted experiment in SIM mode by using optimization. This is done by considering overlapping peaks from a library provided by the user. Other functionalities include retention index calibration to improve target identification and plotting EICs of individual peaks in specific runs which can be used for visual assessment. In summary, the package has several capabilities, including:
+\begin{itemize}
+\item Processing gas chromatography coupled with mass spectrometry data acquired in selected ion monitoring (SIM) mode.
+\item Peak detection and identification.
+\item Similarity score calculation.
+\item Retention index (RI) calibration.
+\item Reading NIST mass spectral library (MSL) format.
+\item Importing netCDF raw files.
+\item EIC and TIC visualization
+\item Providing guidance in choosing appropriate fragments for the targets of interest by using an optimization algorithm. 
+\end{itemize}
+
+
+\section{Examples}
+Here, we provide some examples of the usage of different functions in the SIMAT package. After installation, we start by loading the package and example data sets included in the SIMAT library.
+
+<<packageLoad>>=
+# load the package
+library(SIMAT)
+# load the extracted data from a CDF file of a SIM run
+data(Run)
+
+# load the target table information
+data(target.table)
+
+# load the background library to be used with fragment selection
+data(Library)
+
+# load retention index table from RI standards
+data(RItable)
+@
+
+
+First let us examine the contents of the loaded data sets. Please note that you can find more details by checking the manual page for each data set. Starting with \texttt{Run} we can see that this object is a list, including four items, retention time, scans, scan information (in the \texttt{pk} filed), and the TIC data. We can also check some values for each field:
+
+<<examineRun>>=
+# check the names of different fields in Run
+names(Run)
+
+# show some values for the the first three fields
+head(as.data.frame(Run[c("rt", "sc", "tic")]))
+
+# see what is included in the scan information for the first scan
+Run$pk[[1]]
+@
+
+We can also plot the total ion chromatogram (TIC) of the run:
+
+<<plotTIC,fig=TRUE>>=
+# plot the TIC of the selected Run
+plotTIC(Run = Run)
+@
+
+For the target table information, which is a list object, we have three fileds, i.e. \texttt{compound}, \texttt{ms}, and \texttt{numFrag}:
+
+<<examineTargetTable>>=
+# check the name of included fields
+names(target.table)
+
+# check the first lines of the target.table
+head(as.data.frame(target.table[c("compound", "numFrag")]))
+
+# check the contents of the ms field
+target.table$ms[[1]]
+@
+
+Similarly, for the library:
+
+<<examineLibrary>>=
+# check the name of included fields
+names(Library)
+
+# check the first lines of Library
+head(as.data.frame(Library[c("rt", "ri", "compound")]))
+
+# check the contents of the ms and sp fields related to the mass and intensity
+# of the fragments, i.e. spectral information
+Spectrum <- data.frame(ms = Library$ms[[1]], sp = Library$sp[[1]])
+head(Spectrum)
+
+# plot the spectrum
+plot(x = Spectrum$ms, y = Spectrum$sp, type = "h", lwd = 2, col = "blue", 
+     xlab = "mass", ylab = "intensity", main = Library$compound[1])
+@
+
+At last, let us find out what is included in \texttt{RItable}:
+
+<<examineRItable>>=
+# check the name of included fields
+names(RItable)
+
+# check the first lines of RItable
+head(RItable)
+@
+
+Now we need to get the Targets from the provided target table and the library:
+
+<<getTarget>>=
+# get targets info using target table and provided library
+Targets <- getTarget(Method = "library", Library = Library, 
+                    target.table = target.table)
+
+# check the fields of Targets
+names(Targets)
+
+# check the first lines of some fields
+head(as.data.frame(Targets[c("compound", "rt", "ri")]))
+@
+
+To find the corresponding peaks in the run, we can call \texttt{getPeak} function:
+
+<<getPeak>>=
+# get the peaks for this run corresponding to Targets
+runPeaks <- getPeak(Run = Run, Targets = Targets)
+
+# check the length of runPeaks (number of targets)
+length(runPeaks)
+
+# check the fields for each peak
+names(runPeaks[[1]])
+
+# area of the EIC of the first target
+runPeaks[[1]]$area
+@
+
+Following that, the extracted ion chromatogram (EIC) of the retrieved peaks can be visualized using \texttt{plotEIC} function:
+
+<<plotEIC,fig=TRUE>>=
+# plot the EIC of the first peak (target) on the list
+plotEIC(peakEIC = runPeaks[[1]])
+@
+
+However, the above is done without retention time calibration. To adjust for RI, first we call \texttt{getRI} to create a function which can be used to calculate the RI given the retention time:
+
+<<getRI>>=
+# create the RI calibration function
+calcRI <- getRI(RItable)
+
+# calculate the RI of an RT = 12.32min
+calcRI(12.32)
+
+# get the peaks for this run corresponding to Targets using RI calibration
+runPeaksRI <- getPeak(Run = Run, Targets = Targets, calcRI = calcRI)
+@
+
+It is informative to check the scores for the detected targets. This can be done by using a specific target in an individual run, or by finding the scores of all targets at once and looking at the histogram of the scores:
+
+<<getPeakScore,fig=TRUE>>=
+# find the similarity score of the found targets
+Scores <- getPeakScore(runPeaks = runPeaks, plot = TRUE)
+
+# check the value of scores
+print(Scores)
+@
+
+To use the fragment selection function, i.e. \texttt{optFrag}, we can use the example background library \texttt{bgLib}. This is recommended to be done before the experiment, as after running the experiment, it may not be possible to find an optimum choice among the set of monitored fragments. We can also check to see what is the difference between the default set of the fragments, and the ones selected by \texttt{optFrag} function:
+
+<<optFrag>>=
+# get the optimized version of the target list
+optTargets <- optFrag(Library = Library, target.table = target.table, 
+                      forceOpt = TRUE)
+
+# check the fragments of the first target
+# the mass of fragments
+Targets$ms[[1]]
+# the intensity of fragments
+Targets$sp[[1]]
+
+# check them after optimization
+# the mass of fragments
+optTargets$ms[[1]]
+# the intensity of fragments
+optTargets$sp[[1]]
+@
+
+In the example above, the \texttt{optFrag} function is used directly. However, it is usually used within the \texttt{getTarget} function, where the user can set if optimization is desired.
+
+
+\section{Future Work}
+Improved peak detection and more options for data visualization are the main aspects of the next version. A GUI, where users can import and export data, is also considered for in future versions. Finally, it is planned to add support for importing other types of raw data such as mzML and mzXML together with other mass spectral library formats rather than NIST MSL.
+
+\end{document}
